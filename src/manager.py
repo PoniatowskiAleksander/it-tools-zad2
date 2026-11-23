@@ -1,4 +1,4 @@
-from src.models import Apartment, ApartmentSettlement, Bill, Parameters, Tenant, Transfer
+from src.models import Apartment, ApartmentSettlement, Bill, Parameters, Tenant, TenantSettlement, Transfer
 
 
 class Manager:
@@ -50,6 +50,29 @@ class Manager:
             total_bills_pln=total_bills,
             total_due_pln=total_bills
         )
+
+    def create_tenant_settlements(self, apartment_key: str, year: int, month: int) -> list[TenantSettlement]:
+        """Rozliczenia najemców mieszkania za dany miesiąc - koszty dzielone po równo (bez przelewów)."""
+        apartment_settlement = self.create_apartment_settlement(apartment_key, year, month)
+        if apartment_settlement is None:
+            return []
+        tenant_keys = [key for key, tenant in self.tenants.items() if tenant.apartment == apartment_key]
+        if not tenant_keys:
+            return []
+        count = len(tenant_keys)
+        return [
+            TenantSettlement(
+                tenant=tenant_key,
+                apartment_settlement=apartment_key,
+                month=month,
+                year=year,
+                rent_pln=apartment_settlement.total_rent_pln / count,
+                bills_pln=apartment_settlement.total_bills_pln / count,
+                total_due_pln=apartment_settlement.total_due_pln / count,
+                balance_pln=0.0
+            )
+            for tenant_key in tenant_keys
+        ]
 
     def check_tenants_apartment_keys(self) -> bool:
         for tenant in self.tenants.values():
