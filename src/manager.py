@@ -1,4 +1,4 @@
-from src.models import Apartment, Bill, Parameters, Tenant, Transfer
+from src.models import Apartment, ApartmentSettlement, Bill, Parameters, Tenant, Transfer
 
 
 class Manager:
@@ -28,6 +28,27 @@ class Manager:
             if bill.apartment == apartment_key
             and (year is None or bill.settlement_year == year)
             and (month is None or bill.settlement_month == month)
+        )
+
+    def create_apartment_settlement(self, apartment_key: str, year: int, month: int) -> ApartmentSettlement | None:
+        """Rozliczenie mieszkania za dany miesiąc (na razie bez przelewów i najemców)."""
+        if apartment_key not in self.apartments:
+            return None
+        bills = [
+            bill for bill in self.bills
+            if bill.apartment == apartment_key
+            and bill.settlement_year == year
+            and bill.settlement_month == month
+        ]
+        total_rent = sum(bill.amount_pln for bill in bills if bill.type == 'rent')
+        total_bills = sum(bill.amount_pln for bill in bills)
+        return ApartmentSettlement(
+            apartment=apartment_key,
+            month=month,
+            year=year,
+            total_rent_pln=total_rent,
+            total_bills_pln=total_bills,
+            total_due_pln=total_bills
         )
 
     def check_tenants_apartment_keys(self) -> bool:
