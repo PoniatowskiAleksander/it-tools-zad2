@@ -16,15 +16,18 @@ class Manager:
         self.transfers = Transfer.from_json_file(self.parameters.transfers_json_path)
         self.bills = Bill.from_json_file(self.parameters.bills_json_path)
 
-    def get_apartment_costs(self, apartment_key: str, year: int, month: int) -> float:
-        """Suma rachunków mieszkania w danym miesiącu. Rzuca KeyError, gdy mieszkanie nie istnieje."""
+    def get_apartment_costs(self, apartment_key: str, year: int | None = None, month: int | None = None) -> float | None:
+        """Suma rachunków mieszkania. Bez miesiąca - cały rok, bez roku - cała historia.
+        Zwraca None, gdy mieszkanie nie istnieje. Rzuca ValueError dla miesiąca spoza 1-12."""
+        if month is not None and not 1 <= month <= 12:
+            raise ValueError(f"Nieprawidłowy miesiąc: {month}")
         if apartment_key not in self.apartments:
-            raise KeyError(f"Nieznane mieszkanie: {apartment_key}")
+            return None
         return sum(
             bill.amount_pln for bill in self.bills
             if bill.apartment == apartment_key
-            and bill.settlement_year == year
-            and bill.settlement_month == month
+            and (year is None or bill.settlement_year == year)
+            and (month is None or bill.settlement_month == month)
         )
 
     def check_tenants_apartment_keys(self) -> bool:
